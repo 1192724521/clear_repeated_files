@@ -1,11 +1,13 @@
 <template>
-  <el-input v-model="selected" placeholder="请选择文件夹" @click="selectDir"></el-input>
-  <el-button type="primary" @click=getDatas v-loading.fullscreen.lock="searchLoading"
-    :element-loading-text="`已经获取 ${count} 个文件`">查询文件</el-button>
-  <el-button type="primary" @click=caculateSha1>计算sha1</el-button>
-  <el-button type="danger" @click=deleteFiles>删除文件</el-button>
-  <el-progress :percentage="progressPercent" text-inside :stroke-width="25" />
-  <el-auto-resizer>
+  <div>
+    <el-input v-model="selected" placeholder="请选择文件夹" @click="selectDir"></el-input>
+    <el-button type="primary" @click=getDatas v-loading.fullscreen.lock="searchLoading"
+      :element-loading-text="`已经获取 ${count} 个文件`">查询文件</el-button>
+    <el-button type="primary" @click=caculateSha1>计算sha1</el-button>
+    <el-button type="danger" @click=deleteFiles>删除文件</el-button>
+    <el-progress :percentage="progressPercent" text-inside :stroke-width="25" />
+  </div>
+  <el-auto-resizer style="height: calc(100% - 89px);">
     <template #default="{ height, width }">
       <el-table-v2 :columns="columns" :data="tableData" :height="height" :width="width" expand-column-key="id"
         :row-class="rowClass" :default-expanded-row-keys="defaultExpandedRowKeys" v-loading.lock="tableLoading" />
@@ -54,23 +56,22 @@ const columns: any = [
 const tableData: any = ref([])
 let repeatedCount: any = {}
 
-let searchLoading = false
+let searchLoading = ref(false)
 let count = 0
 const getDatas = async () => {
   if (selected.value == "") {
     return
   }
-  searchLoading = true
+  searchLoading.value = true
   count = 0
 
-  let loadingTextHtml: any
-  Promise.resolve().then(() => {
-    loadingTextHtml = document.querySelector(".el-loading-text")
+  let loadingTextHtml = await Promise.resolve().then(() => {
+    return document.querySelector(".el-loading-text")
   })
   let timer = setInterval(() => {
     invoke('get_walkfile_count').then((res: any) => {
       count = res
-      loadingTextHtml.innerHTML = `已经获取 ${count} 个文件`
+      loadingTextHtml!.innerHTML = `已经获取 ${count} 个文件`
     })
   }, 1000)
 
@@ -98,7 +99,7 @@ const getDatas = async () => {
   }
 
   clearInterval(timer)
-  searchLoading = false
+  searchLoading.value = false
 }
 const rowClass = ({ rowData }: any) => {
   if (repeatedCount[rowData.sha1] > 1) {
@@ -110,11 +111,11 @@ const rowClass = ({ rowData }: any) => {
 }
 const defaultExpandedRowKeys: any[] = []
 
-let progressPercent = 0
-let tableLoading = false
+let progressPercent = ref(0)
+let tableLoading = ref(false)
 const caculateSha1 = async () => {
-  tableLoading = true
-  progressPercent = 0
+  tableLoading.value = true
+  progressPercent.value = 0
   let timer = setInterval(() => {
     invoke('get_progress_percent').then((res: any) => {
       progressPercent = res
@@ -122,14 +123,14 @@ const caculateSha1 = async () => {
   }, 1000)
   await invoke('caculate_sha1', { path: selected.value })
   clearInterval(timer)
-  progressPercent = 100
-  tableLoading = false
+  progressPercent.value = 100
+  tableLoading.value = false
   getDatas()
 }
 
 
 const deleteFiles = async () => {
-  tableLoading = true
+  tableLoading.value = true
   const files: any[] = []
   const getCheckedFilePath = (tableData: any) => {
     for (let i = 0; i < tableData.length; i++) {
@@ -146,7 +147,7 @@ const deleteFiles = async () => {
   getCheckedFilePath(tableData.value)
   const res = await invoke('delete_files', { vecPaths: files })
   alert(res)
-  tableLoading = false
+  tableLoading.value = false
   getDatas()
 }
 
