@@ -91,7 +91,7 @@ const getDatas = async () => {
         pre.pop()
         let cur = resDatas[i].path.split('\\')
         cur.pop()
-        if(pre == cur ){
+        if(JSON.stringify(pre) == JSON.stringify(cur) ){
             resDatas[i].checked = true
         }
         repeatedCount[fileInfo.sha1]++
