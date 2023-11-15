@@ -118,7 +118,7 @@ const caculateSha1 = async () => {
   progressPercent.value = 0
   let timer = setInterval(() => {
     invoke('get_progress_percent').then((res: any) => {
-      progressPercent = res
+      progressPercent.value = res
     })
   }, 1000)
   await invoke('caculate_sha1', { path: selected.value })
