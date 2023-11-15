@@ -61,7 +61,7 @@ const columns: any = [
   },
   { key: "id", dataKey: "id", title: "序号", width: 200 },
   { key: "path", dataKey: "path", title: "路径", width: 1000 },
-  { key: "len", dataKey: "len", title: "文件大小", width: 200, align: "center" },
+  { key: "len", dataKey: "len", title: "文件大小", width: 1000, align: "center" },
   { key: "modified_time", dataKey: "modified_time", title: "修改日期", width: 200, align: "center" },
   { key: "sha1", dataKey: "sha1", title: "SHA1", width: 400, align: "center" }
 ]
@@ -114,6 +114,9 @@ const getDatas = async () => {
   if (inOneDir.value) {
     for (let i = 0; i < resDatas.length; i++) {
       const fileInfo = resDatas[i];
+      if (fileInfo.path.search(/U:\\阿里云盘\\聊天记录\\MsgBackup/) == 0) {
+        continue
+      }
       fileInfo.modified_time = dayjs(parseInt(fileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
       new FileInfo(fileInfo).walk()
     }
@@ -124,7 +127,15 @@ const getDatas = async () => {
         continue
       }
       fileInfo.modified_time = dayjs(parseInt(fileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
+      //重复文件
       if (fileInfo.sha1 != null && repeatedCount[fileInfo.sha1] > 1) {
+        let dirpath = fileInfo.path.split('\\')
+        let filename = dirpath.pop()
+        fileInfo.len = dirpath
+
+        if (fileInfo.path.search(/文件恢复/) != -1) {
+          fileInfo.checked = true
+        }
         tableData.value.push(fileInfo)
       }
     }
