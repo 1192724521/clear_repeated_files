@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="tsx">
-import { ref } from 'vue';
+import { Ref, ref } from 'vue';
 import { open } from '@tauri-apps/api/dialog'
 import { invoke } from "@tauri-apps/api/tauri";
 import { CheckboxValueType, ElCheckbox, dayjs } from 'element-plus';
@@ -65,7 +65,7 @@ const columns: any = [
   { key: "modified_time", dataKey: "modified_time", title: "修改日期", width: 200, align: "center" },
   { key: "sha1", dataKey: "sha1", title: "SHA1", width: 400, align: "center" }
 ]
-const tableData: any = ref([])
+const tableData: Ref<any[]> = ref([])
 let repeatedCount: any = {}
 
 let searchLoading = ref(false)
@@ -111,14 +111,23 @@ const getDatas = async () => {
       }
     }
   }
-  if (inOneDir) {
+  if (inOneDir.value) {
     for (let i = 0; i < resDatas.length; i++) {
       const fileInfo = resDatas[i];
       fileInfo.modified_time = dayjs(parseInt(fileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
       new FileInfo(fileInfo).walk()
     }
   } else {
-    tableData.value = resDatas
+    for (let i = 0; i < resDatas.length; i++) {
+      const fileInfo = resDatas[i];
+      if (fileInfo.path.search(/U:\\阿里云盘\\聊天记录\\MsgBackup/) == 0) {
+        continue
+      }
+      fileInfo.modified_time = dayjs(parseInt(fileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
+      if (fileInfo.sha1 != null && repeatedCount[fileInfo.sha1] > 1) {
+        tableData.value.push(fileInfo)
+      }
+    }
   }
 
   clearInterval(timer)
@@ -152,7 +161,7 @@ const caculateSha1 = async () => {
 }
 
 const dialogVisible = ref(false)
-const files: any = ref([])
+const files: Ref<any[]> = ref([])
 
 const openDialog = () => {
   files.value = []
@@ -162,7 +171,7 @@ const openDialog = () => {
       if (fileInfo.checked) {
         files.value.push({ path: fileInfo.path })
       } else {
-        if (fileInfo.children.length > 0) {
+        if (fileInfo.children && fileInfo.children.length > 0) {
           getCheckedFilePath(fileInfo.children)
         }
       }
@@ -174,7 +183,13 @@ const openDialog = () => {
 const deleteFiles = async () => {
   dialogVisible.value = false
   tableLoading.value = true
-  const res = await invoke('delete_files', { vecPaths: files })
+
+  let vecPaths = []
+  for (let i = 0; i < files.value.length; i++) {
+    const element = files.value[i];
+    vecPaths.push(element.path)
+  }
+  const res = await invoke('delete_files', { vecPaths: vecPaths })
   alert(res)
   tableLoading.value = false
   getDatas()
@@ -225,7 +240,7 @@ class FileInfo {
 </script>
 
 <style scoped>
-:global(.el-table-v2 .isRepeated) {
+:global(.el-table-v2 .isRepeated>div:nth-child(6)) {
   background-color: #f56c6c;
 }
 
