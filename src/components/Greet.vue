@@ -87,7 +87,13 @@ const getDatas = async () => {
         repeatedCount[fileInfo.sha1] = 1
       } else {
         //已经有相同的sha1，该文件重复
-        resDatas[i].checked = true
+        let pre = resDatas[i-1].path.split('\\')
+        pre.pop()
+        let cur = resDatas[i].path.split('\\')
+        cur.pop()
+        if(pre == cur ){
+            resDatas[i].checked = true
+        }
         repeatedCount[fileInfo.sha1]++
       }
     }
