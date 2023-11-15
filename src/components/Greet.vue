@@ -133,9 +133,9 @@ const getDatas = async () => {
         let filename = dirpath.pop()
         fileInfo.len = dirpath
 
-        if (fileInfo.path.search(/文件恢复/) != -1) {
-          fileInfo.checked = true
-        }
+        // if (fileInfo.path.search(//) != -1) {
+        //   fileInfo.checked = true
+        // }
         tableData.value.push(fileInfo)
       }
     }
