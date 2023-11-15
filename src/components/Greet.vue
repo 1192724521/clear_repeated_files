@@ -4,7 +4,8 @@
     <el-button type="primary" @click=getDatas v-loading.fullscreen.lock="searchLoading"
       :element-loading-text="`已经获取 ${count} 个文件`">查询文件</el-button>
     <el-button type="primary" @click=caculateSha1>计算sha1</el-button>
-    <el-button type="danger" @click=deleteFiles>删除文件</el-button>
+    <el-button type="danger" @click="openDialog">删除文件</el-button>
+    <el-switch v-model="inOneDir" active-text="同一文件夹" inactive-text="不同文件夹" />
     <el-progress :percentage="progressPercent" text-inside :stroke-width="25" />
   </div>
   <el-auto-resizer style="height: calc(100% - 89px);">
@@ -13,6 +14,17 @@
         :row-class="rowClass" :default-expanded-row-keys="defaultExpandedRowKeys" v-loading.lock="tableLoading" />
     </template>
   </el-auto-resizer>
+  <el-dialog v-model="dialogVisible" title="删除文件">
+    <el-table :data="files">
+      <el-table-column label="路径" prop="path"></el-table-column>
+    </el-table>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="deleteFiles">确认</el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="tsx">
@@ -58,6 +70,7 @@ let repeatedCount: any = {}
 
 let searchLoading = ref(false)
 let count = 0
+let inOneDir = ref(true)
 const getDatas = async () => {
   if (selected.value == "") {
     return
@@ -87,21 +100,25 @@ const getDatas = async () => {
         repeatedCount[fileInfo.sha1] = 1
       } else {
         //已经有相同的sha1，该文件重复
-        let pre = resDatas[i-1].path.split('\\')
+        let pre = resDatas[i - 1].path.split('\\')
         pre.pop()
         let cur = resDatas[i].path.split('\\')
         cur.pop()
-        if(JSON.stringify(pre) == JSON.stringify(cur) ){
-            resDatas[i].checked = true
+        if (JSON.stringify(pre) == JSON.stringify(cur)) {
+          resDatas[i].checked = true
         }
         repeatedCount[fileInfo.sha1]++
       }
     }
   }
-  for (let i = 0; i < resDatas.length; i++) {
-    const fileInfo = resDatas[i];
-    fileInfo.modified_time = dayjs(parseInt(fileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
-    new FileInfo(fileInfo).walk()
+  if (inOneDir) {
+    for (let i = 0; i < resDatas.length; i++) {
+      const fileInfo = resDatas[i];
+      fileInfo.modified_time = dayjs(parseInt(fileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
+      new FileInfo(fileInfo).walk()
+    }
+  } else {
+    tableData.value = resDatas
   }
 
   clearInterval(timer)
@@ -134,15 +151,16 @@ const caculateSha1 = async () => {
   getDatas()
 }
 
+const dialogVisible = ref(false)
+const files: any = ref([])
 
-const deleteFiles = async () => {
-  tableLoading.value = true
-  const files: any[] = []
+const openDialog = () => {
+  files.value = []
   const getCheckedFilePath = (tableData: any) => {
     for (let i = 0; i < tableData.length; i++) {
       const fileInfo = tableData[i];
       if (fileInfo.checked) {
-        files.push(fileInfo.path)
+        files.value.push({ path: fileInfo.path })
       } else {
         if (fileInfo.children.length > 0) {
           getCheckedFilePath(fileInfo.children)
@@ -151,6 +169,11 @@ const deleteFiles = async () => {
     }
   }
   getCheckedFilePath(tableData.value)
+  dialogVisible.value = true
+}
+const deleteFiles = async () => {
+  dialogVisible.value = false
+  tableLoading.value = true
   const res = await invoke('delete_files', { vecPaths: files })
   alert(res)
   tableLoading.value = false
