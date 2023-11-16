@@ -132,7 +132,9 @@ const getDatas = async () => {
         let dirpath = fileInfo.path.split('\\')
         let filename = dirpath.pop()
         fileInfo.len = dirpath
-
+        if(fileInfo.modified_time < resDatas[i-1].modified_time){
+            fileInfo.checked = true
+        }
         // if (fileInfo.path.search(//) != -1) {
         //   fileInfo.checked = true
         // }
