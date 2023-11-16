@@ -28,8 +28,10 @@ WHERE
     .fetch_all(POOL.get().unwrap())
     .await
     .unwrap();
+
     file_infos.sort_by(|a, b| b.path.cmp(&a.path));
     file_infos.sort_by(|a, b| a.sha1.cmp(&b.sha1));
+
     Ok(serde_json::to_string(&file_infos).unwrap())
 }
 
@@ -104,7 +106,7 @@ WHERE
                     *USED_MEM.lock().unwrap() -= data.len();
                     *COUNT.lock().unwrap() += 1;
                     *PROGRESS_PERCENT.lock().unwrap() =
-            *COUNT.lock().unwrap() as f64 / total_file as f64 * 100.0;
+                        *COUNT.lock().unwrap() as f64 / total_file as f64 * 100.0;
                 }))
             } else {
                 *COUNT.lock().unwrap() += 1;

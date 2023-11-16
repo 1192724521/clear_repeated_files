@@ -17,3 +17,6 @@ FROM
     fileInfo
 WHERE
     path LIKE ?;
+
+
+ALTER TABLE `fileinfo` CHANGE `old_name` `new_name` new_type NOT NULL;

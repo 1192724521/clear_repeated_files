@@ -13,6 +13,7 @@ struct FileInfo {
     id: Option<i64>,
     path: String,
     len: i64,
+    created_time: String,
     modified_time: String,
     sha1: Option<String>,
 }
@@ -65,6 +66,15 @@ async fn walk_dir(path: &str) {
                 id: None,
                 path: entry.path().to_str().unwrap().to_string(),
                 len: entry.metadata().unwrap().len() as _,
+                created_time: entry
+                    .metadata()
+                    .unwrap()
+                    .created()
+                    .unwrap()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis()
+                    .to_string(),
                 modified_time: entry
                     .metadata()
                     .unwrap()
@@ -96,12 +106,14 @@ WHERE
 UPDATE fileInfo
 SET
     len = ?,
+    created_time = ?,
     modified_time = ?,
     sha1 = ?
 WHERE
     id = ?"#,
                         )
                         .bind(fileinfo.len)
+                        .bind(fileinfo.created_time)
                         .bind(fileinfo.modified_time)
                         .bind(fileinfo.sha1)
                         .bind(value.id)
@@ -116,10 +128,11 @@ WHERE
 INSERT INTO
     fileInfo
 VALUES
-    (NULL, ?, ?, ?, NULL)"#,
+    (NULL, ?, ?, ?, ?, NULL)"#,
                     )
                     .bind(fileinfo.path)
                     .bind(fileinfo.len)
+                    .bind(fileinfo.created_time)
                     .bind(fileinfo.modified_time)
                     .execute(POOL.get().unwrap())
                     .await

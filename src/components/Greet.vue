@@ -5,15 +5,24 @@
       :element-loading-text="`已经获取 ${count} 个文件`">查询文件</el-button>
     <el-button type="primary" @click=caculateSha1>计算sha1</el-button>
     <el-button type="danger" @click="openDialog">删除文件</el-button>
-    <el-switch v-model="inOneDir" active-text="同一文件夹" inactive-text="不同文件夹" />
     <el-progress :percentage="progressPercent" text-inside :stroke-width="25" />
   </div>
-  <el-auto-resizer style="height: calc(100% - 89px);">
-    <template #default="{ height, width }">
-      <el-table-v2 :columns="columns" :data="tableData" :height="height" :width="width" expand-column-key="id"
-        :row-class="rowClass" :default-expanded-row-keys="defaultExpandedRowKeys" v-loading.lock="tableLoading" />
-    </template>
-  </el-auto-resizer>
+  <div style="height: calc(100% - 89px);;display: flex;">
+    <el-auto-resizer style="width: 50%;">
+      <template #default="{ height, width }">
+        <el-table-v2 :columns="leftColumns" :data="leftTableData" :height="height" :width="width" expand-column-key="id"
+          :row-class="leftRowClass" :default-expanded-row-keys="defaultExpandedRowKeys" v-loading.lock="tableLoading" />
+      </template>
+    </el-auto-resizer>
+
+    <el-auto-resizer style="width: 50%">
+      <template #default="{ height, width }">
+        <el-table-v2 :columns="rightColumns" :data="rightTableData" :height="height" :width="width" expand-column-key="id"
+          :row-class="rowClass" :default-expanded-row-keys="defaultExpandedRowKeys" v-loading.lock="tableLoading" />
+      </template>
+    </el-auto-resizer>
+
+  </div>
   <el-dialog v-model="dialogVisible" title="删除文件">
     <el-table :data="files">
       <el-table-column label="路径" prop="path"></el-table-column>
@@ -40,7 +49,12 @@ const selectDir = () => {
     selected.value = r
   })
 }
-const columns: any = [
+const leftColumns: any = [
+  { key: "sha1", dataKey: "sha1", title: "SHA1", width: 400, align: "center" },
+  { key: "modified_time", dataKey: "modified_time", title: "修改日期", width: 200, align: "center" },
+  { key: "len", dataKey: "len", title: "文件大小", width: 100, align: "center" },
+  { key: "filename", dataKey: "filename", title: "路径", width: 1000, align: "right" },
+  { key: "id", dataKey: "id", title: "序号", width: 200, align: "right" },
   {
     key: "select", width: 50, align: "center",
     cellRenderer: ({ rowData }: any) => {
@@ -48,9 +62,29 @@ const columns: any = [
       return <ElCheckbox modelValue={rowData.checked} onChange={onChange} />
     },
     headerCellRenderer: () => {
-      const _data: any = tableData.value
+      const _data: any = leftTableData.value
       const onChange = (value: CheckboxValueType) =>
-      (tableData.value = _data.map((row: any) => {
+      (leftTableData.value = _data.map((row: any) => {
+        row.checked = value
+        return row
+      }))
+      const allSelected = _data.every((row: any) => row.checked)
+      const containsChecked = _data.some((row: any) => row.checked)
+      return <ElCheckbox modelValue={allSelected} indeterminate={containsChecked && !allSelected} onChange={onChange} />
+    }
+  },
+]
+const rightColumns: any = [
+  {
+    key: "select", width: 50, align: "center",
+    cellRenderer: ({ rowData }: any) => {
+      const onChange = (value: CheckboxValueType) => (rowData.checked = value)
+      return <ElCheckbox modelValue={rowData.checked} onChange={onChange} />
+    },
+    headerCellRenderer: () => {
+      const _data: any = rightTableData.value
+      const onChange = (value: CheckboxValueType) =>
+      (rightTableData.value = _data.map((row: any) => {
         row.checked = value
         return row
       }))
@@ -60,17 +94,17 @@ const columns: any = [
     }
   },
   { key: "id", dataKey: "id", title: "序号", width: 200 },
-  { key: "path", dataKey: "path", title: "路径", width: 1000 },
-  { key: "len", dataKey: "len", title: "文件大小", width: 1000, align: "center" },
+  { key: "filename", dataKey: "filename", title: "路径", width: 1000 },
+  { key: "len", dataKey: "len", title: "文件大小", width: 100, align: "center" },
   { key: "modified_time", dataKey: "modified_time", title: "修改日期", width: 200, align: "center" },
   { key: "sha1", dataKey: "sha1", title: "SHA1", width: 400, align: "center" }
 ]
-const tableData: Ref<any[]> = ref([])
+const leftTableData: Ref<any[]> = ref([])
+const rightTableData: Ref<any[]> = ref([])
 let repeatedCount: any = {}
 
 let searchLoading = ref(false)
 let count = 0
-let inOneDir = ref(true)
 const getDatas = async () => {
   if (selected.value == "") {
     return
@@ -91,10 +125,10 @@ const getDatas = async () => {
   const res: string = await invoke("get_datas", { path: selected.value })
   const resDatas = JSON.parse(res)
 
-  tableData.value = []
- 
-  if (inOneDir.value) {
-       repeatedCount = {}
+  leftTableData.value = []
+  rightTableData.value = []
+
+  repeatedCount = {}
   for (let i = 0; i < resDatas.length; i++) {
     const fileInfo = resDatas[i];
     if (fileInfo.sha1 != null) {
@@ -102,65 +136,49 @@ const getDatas = async () => {
         repeatedCount[fileInfo.sha1] = 1
       } else {
         //已经有相同的sha1，该文件重复
-        let pre = resDatas[i - 1].path.split('\\')
-        pre.pop()
-        let cur = resDatas[i].path.split('\\')
-        cur.pop()
-        if (JSON.stringify(pre) == JSON.stringify(cur)) {
-          resDatas[i].checked = true
-        }
         repeatedCount[fileInfo.sha1]++
       }
     }
   }
-    for (let i = 0; i < resDatas.length; i++) {
-      const fileInfo = resDatas[i];
-      if (fileInfo.path.search(/U:\\阿里云盘\\聊天记录\\MsgBackup/) == 0) {
-        continue
-      }
-      fileInfo.modified_time = dayjs(parseInt(fileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
-      new FileInfo(fileInfo).walk()
-    }
-  } else {
-       repeatedCount = {}
+
+  let sha1
   for (let i = 0; i < resDatas.length; i++) {
-    const fileInfo = resDatas[i];
-    if (fileInfo.sha1 != null) {
-      if (repeatedCount[fileInfo.sha1] == undefined) {
-        repeatedCount[fileInfo.sha1] = 1
-      } else {
-        //已经有相同的sha1，该文件重复
-        let pre = resDatas[i - 1].modified_time
-        let cur = resDatas[i].modified_time
-        if(cur < pre){
-            fileInfo.checked = true
-        }
-        repeatedCount[fileInfo.sha1]++
-      }
+    const curFileInfo = resDatas[i];
+    if (curFileInfo.path.search(/U:\\阿里云盘\\聊天记录\\MsgBackup/) == 0) {
+      continue
     }
-  }
-    for (let i = 0; i < resDatas.length; i++) {
-      const fileInfo = resDatas[i];
-      if (fileInfo.path.search(/U:\\阿里云盘\\聊天记录\\MsgBackup/) == 0) {
-        continue
+
+    if (curFileInfo.sha1 == sha1) {
+      continue
+    }
+    if (repeatedCount[curFileInfo.sha1] > 1) {
+      sha1 = curFileInfo.sha1
+      const nexFileInfo = resDatas[i + 1]
+      curFileInfo.created_time = dayjs(parseInt(curFileInfo.created_time)).format("YYYY-MM-DD HH:MM:ss")
+      curFileInfo.modified_time = dayjs(parseInt(curFileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
+      nexFileInfo.created_time = dayjs(parseInt(nexFileInfo.created_time)).format("YYYY-MM-DD HH:MM:ss")
+      nexFileInfo.modified_time = dayjs(parseInt(nexFileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
+      let cur = curFileInfo.path.split('\\')
+      cur.pop()
+      let nex = nexFileInfo.path.split('\\')
+      nex.pop()
+      if (JSON.stringify(cur) == JSON.stringify(nex)) {
+        nexFileInfo.checked = true
       }
-      fileInfo.modified_time = dayjs(parseInt(fileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
-      //重复文件
-      if (fileInfo.sha1 != null && repeatedCount[fileInfo.sha1] > 1) {
-        let dirpath = fileInfo.path.split('\\')
-        let filename = dirpath.pop()
-        fileInfo.len = dirpath
-        
-        // if (fileInfo.path.search(//) != -1) {
-        //   fileInfo.checked = true
-        // }
-        tableData.value.push(fileInfo)
-      }
+      new FileInfo(curFileInfo, nexFileInfo).walk()
     }
   }
 
   clearInterval(timer)
   searchLoading.value = false
+}
+const leftRowClass = ({ rowData }: any) => {
+  if (repeatedCount[rowData.sha1] > 1) {
+    return 'leftIsRepeated'
+  }
+  if (rowData.len == undefined) {
+    return 'isDir'
+  }
 }
 const rowClass = ({ rowData }: any) => {
   if (repeatedCount[rowData.sha1] > 1) {
@@ -170,7 +188,8 @@ const rowClass = ({ rowData }: any) => {
     return 'isDir'
   }
 }
-const defaultExpandedRowKeys: any[] = []
+
+const defaultExpandedRowKeys: Ref<any[]> = ref([])
 
 let progressPercent = ref(0)
 let tableLoading = ref(false)
@@ -206,7 +225,8 @@ const openDialog = () => {
       }
     }
   }
-  getCheckedFilePath(tableData.value)
+  getCheckedFilePath(leftTableData.value)
+  getCheckedFilePath(rightTableData.value)
   dialogVisible.value = true
 }
 const deleteFiles = async () => {
@@ -225,51 +245,83 @@ const deleteFiles = async () => {
 }
 
 class FileInfo {
-  id
-  len
-  modified_time
-  path
-  sha1
-  checked
+  leftFile
+  rightFile
 
-  constructor(fileInfo: any) {
-    this.id = fileInfo.id
-    this.len = fileInfo.len
-    this.modified_time = fileInfo.modified_time
-    this.path = fileInfo.path
-    this.sha1 = fileInfo.sha1
-    this.checked = fileInfo.checked
+  constructor(preFileInfo: any, nexFileInfo: any) {
+    this.leftFile = {
+      id: preFileInfo.id,
+      len: preFileInfo.len,
+      created_time: preFileInfo.created_time,
+      modified_time: preFileInfo.modified_time,
+      path: preFileInfo.path,
+      sha1: preFileInfo.sha1,
+      checked: preFileInfo.checked,
+    }
+    this.rightFile = {
+      id: nexFileInfo.id,
+      len: nexFileInfo.len,
+      created_time: nexFileInfo.created_time,
+      modified_time: nexFileInfo.modified_time,
+      path: nexFileInfo.path,
+      sha1: nexFileInfo.sha1,
+      checked: nexFileInfo.checked,
+    }
   }
   walk() {
-    //不重复文件不显示
-    if (repeatedCount[this.sha1] <= 1 || this.sha1 == null) {
-      return
+    let temp = leftTableData.value
+    let pathBuf = this.leftFile.path.split('\\')
+    let filename = pathBuf.pop()
+    let dir = pathBuf.join('\\')
+    //如果是文件夹
+    let length = temp.push({ id: dir, children: [] })
+    //如果文件夹不在默认展开，则添入
+    if (!defaultExpandedRowKeys.value.find((x: any) => x == dir)) {
+      defaultExpandedRowKeys.value.push(dir)
     }
-    let temp = tableData.value
-    let pathBuf = this.path.split('\\')
-    for (let i = 0; i < pathBuf.length; i++) {
-      const path = pathBuf[i];
-      let index = temp.findIndex((x: any) => x.path == path)
-      if (index == -1) {
-        //如果是文件夹
-        if (i != pathBuf.length - 1) {
-          temp.push({ id: path, path: path, children: [] })
-          //如果文件夹不在默认展开，则添入
-          if (!defaultExpandedRowKeys.find((x: any) => x.path == path)) {
-            defaultExpandedRowKeys.push(path)
-          }
-        } else {
-          temp.push({ id: this.id, path: this.path, len: this.len, modified_time: this.modified_time, sha1: this.sha1, checked: this.checked, children: [] })
-        }
-      }
-      temp = temp[index == -1 ? temp.length - 1 : index].children
+    temp = temp[length - 1].children
+    temp.push({
+      id: this.leftFile.id,
+      len: this.leftFile.len,
+      created_time: this.leftFile.created_time,
+      modified_time: this.leftFile.modified_time,
+      path: this.leftFile.path,
+      sha1: this.leftFile.sha1,
+      checked: this.leftFile.checked,
+      filename
+    })
+
+    temp = rightTableData.value
+    pathBuf = this.rightFile.path.split('\\')
+    filename = pathBuf.pop()
+    dir = pathBuf.join('\\')
+    //如果是文件夹
+    length = temp.push({ id: dir, children: [] })
+    //如果文件夹不在默认展开，则添入
+    if (!defaultExpandedRowKeys.value.find((x: any) => x == dir)) {
+      defaultExpandedRowKeys.value.push(dir)
     }
+    temp = temp[length - 1].children
+    temp.push({
+      id: this.rightFile.id,
+      len: this.rightFile.len,
+      created_time: this.rightFile.created_time,
+      modified_time: this.rightFile.modified_time,
+      path: this.rightFile.path,
+      sha1: this.rightFile.sha1,
+      checked: this.rightFile.checked,
+      filename
+    })
   }
 }
 </script>
 
 <style scoped>
 :global(.el-table-v2 .isRepeated>div:nth-child(6)) {
+  background-color: #f56c6c;
+}
+
+:global(.el-table-v2 .leftIsRepeated>div:nth-child(1)) {
   background-color: #f56c6c;
 }
 

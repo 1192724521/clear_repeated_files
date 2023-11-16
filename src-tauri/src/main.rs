@@ -57,6 +57,7 @@ CREATE TABLE
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         path TEXT NOT NULL UNIQUE,
         len INTEGER NOT NULL,
+        created_time TEXT NOT NULL,
         modified_time TEXT NOT NULL,
         sha1 TEXT
     );
