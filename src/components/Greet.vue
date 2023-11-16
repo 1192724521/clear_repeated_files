@@ -92,7 +92,9 @@ const getDatas = async () => {
   const resDatas = JSON.parse(res)
 
   tableData.value = []
-  repeatedCount = {}
+ 
+  if (inOneDir.value) {
+       repeatedCount = {}
   for (let i = 0; i < resDatas.length; i++) {
     const fileInfo = resDatas[i];
     if (fileInfo.sha1 != null) {
@@ -111,7 +113,6 @@ const getDatas = async () => {
       }
     }
   }
-  if (inOneDir.value) {
     for (let i = 0; i < resDatas.length; i++) {
       const fileInfo = resDatas[i];
       if (fileInfo.path.search(/U:\\阿里云盘\\聊天记录\\MsgBackup/) == 0) {
@@ -121,6 +122,23 @@ const getDatas = async () => {
       new FileInfo(fileInfo).walk()
     }
   } else {
+       repeatedCount = {}
+  for (let i = 0; i < resDatas.length; i++) {
+    const fileInfo = resDatas[i];
+    if (fileInfo.sha1 != null) {
+      if (repeatedCount[fileInfo.sha1] == undefined) {
+        repeatedCount[fileInfo.sha1] = 1
+      } else {
+        //已经有相同的sha1，该文件重复
+        let pre = resDatas[i - 1].modified_time
+        let cur = resDatas[i].modified_time
+        if(cur < pre){
+            fileInfo.checked = true
+        }
+        repeatedCount[fileInfo.sha1]++
+      }
+    }
+  }
     for (let i = 0; i < resDatas.length; i++) {
       const fileInfo = resDatas[i];
       if (fileInfo.path.search(/U:\\阿里云盘\\聊天记录\\MsgBackup/) == 0) {
@@ -132,9 +150,7 @@ const getDatas = async () => {
         let dirpath = fileInfo.path.split('\\')
         let filename = dirpath.pop()
         fileInfo.len = dirpath
-        if(fileInfo.modified_time < resDatas[i-1].modified_time){
-            fileInfo.checked = true
-        }
+        
         // if (fileInfo.path.search(//) != -1) {
         //   fileInfo.checked = true
         // }
