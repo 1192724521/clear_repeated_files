@@ -103,6 +103,8 @@ WHERE
                     // 释放内存
                     *USED_MEM.lock().unwrap() -= data.len();
                     *COUNT.lock().unwrap() += 1;
+                    *PROGRESS_PERCENT.lock().unwrap() =
+            *COUNT.lock().unwrap() as f64 / total_file as f64 * 100.0;
                 }))
             } else {
                 *COUNT.lock().unwrap() += 1;
