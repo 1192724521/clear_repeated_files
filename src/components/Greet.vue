@@ -11,14 +11,22 @@
     <el-auto-resizer style="width: 50%;">
       <template #default="{ height, width }">
         <el-table-v2 :columns="leftColumns" :data="leftTableData" :height="height" :width="width" expand-column-key="id"
-          :row-class="leftRowClass" :default-expanded-row-keys="defaultExpandedRowKeys" v-loading.lock="tableLoading" />
+          :row-class="leftRowClass" :default-expanded-row-keys="defaultExpandedRowKeys" v-loading.lock="tableLoading">
+          <template #row="props">
+            <LiftRow v-bind="props" />
+          </template>
+        </el-table-v2>
       </template>
     </el-auto-resizer>
 
     <el-auto-resizer style="width: 50%">
       <template #default="{ height, width }">
         <el-table-v2 :columns="rightColumns" :data="rightTableData" :height="height" :width="width" expand-column-key="id"
-          :row-class="rowClass" :default-expanded-row-keys="defaultExpandedRowKeys" v-loading.lock="tableLoading" />
+          :row-class="rowClass" :default-expanded-row-keys="defaultExpandedRowKeys" v-loading.lock="tableLoading">
+          <template #row="props">
+            <RightRow v-bind="props" />
+          </template>
+        </el-table-v2>
       </template>
     </el-auto-resizer>
 
@@ -37,7 +45,7 @@
 </template>
 
 <script setup lang="tsx">
-import { Ref, ref } from 'vue';
+import { Ref, cloneVNode, ref } from 'vue';
 import { open } from '@tauri-apps/api/dialog'
 import { invoke } from "@tauri-apps/api/tauri";
 import { CheckboxValueType, ElCheckbox, dayjs } from 'element-plus';
@@ -189,6 +197,40 @@ const rowClass = ({ rowData }: any) => {
   }
 }
 
+const leftcolSpanIndex = 4
+const LiftRow = ({ rowData, rowIndex, cells, columns }: any) => {
+  if (rowData.sha1 == undefined) {
+    const colSpan = 5
+    let width = Number.parseInt(cells[leftcolSpanIndex].props.style.width)
+    for (let i = 1; i < colSpan; i++) {
+      width += Number.parseInt(cells[leftcolSpanIndex - i].props.style.width)
+      cells[leftcolSpanIndex - i] = null
+    }
+    const style = {
+      ...cells[leftcolSpanIndex].props.style,
+      width: `${width}px`,
+    }
+    cells[leftcolSpanIndex] = cloneVNode(cells[leftcolSpanIndex], { style })
+  }
+  return cells
+}
+const rightcolSpanIndex = 1
+const RightRow = ({ rowData, rowIndex, cells, columns }: any) => {
+  if (rowData.sha1 == undefined) {
+    const colSpan = 5
+    let width = Number.parseInt(cells[rightcolSpanIndex].props.style.width)
+    for (let i = 1; i < colSpan; i++) {
+      width += Number.parseInt(cells[rightcolSpanIndex + i].props.style.width)
+      cells[rightcolSpanIndex + i] = null
+    }
+    const style = {
+      ...cells[rightcolSpanIndex].props.style,
+      width: `${width}px`,
+    }
+    cells[rightcolSpanIndex] = cloneVNode(cells[rightcolSpanIndex], { style })
+  }
+  return cells
+}
 const defaultExpandedRowKeys: Ref<any[]> = ref([])
 
 let progressPercent = ref(0)
@@ -229,6 +271,12 @@ const openDialog = () => {
   getCheckedFilePath(rightTableData.value)
   dialogVisible.value = true
 }
+
+const enterdeleteFiles = () => {
+  console.log("enter");
+  // deleteFiles()
+}
+
 const deleteFiles = async () => {
   dialogVisible.value = false
   tableLoading.value = true
