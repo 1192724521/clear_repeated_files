@@ -127,7 +127,7 @@ const getDatas = async () => {
 
   leftTableData.value = []
   rightTableData.value = []
-
+  dirPair = []
   repeatedCount = {}
   for (let i = 0; i < resDatas.length; i++) {
     const fileInfo = resDatas[i];
@@ -136,6 +136,13 @@ const getDatas = async () => {
         repeatedCount[fileInfo.sha1] = 1
       } else {
         //已经有相同的sha1，该文件重复
+        let pre = resDatas[i - 1].path.split('\\')
+        pre.pop()
+        let cur = fileInfo.path.split('\\')
+        cur.pop()
+        if (JSON.stringify(cur) == JSON.stringify(pre)) {
+          fileInfo.checked = true
+        }
         repeatedCount[fileInfo.sha1]++
       }
     }
@@ -147,7 +154,6 @@ const getDatas = async () => {
     if (curFileInfo.path.search(/U:\\阿里云盘\\聊天记录\\MsgBackup/) == 0) {
       continue
     }
-
     if (curFileInfo.sha1 == sha1) {
       continue
     }
@@ -158,13 +164,7 @@ const getDatas = async () => {
       curFileInfo.modified_time = dayjs(parseInt(curFileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
       nexFileInfo.created_time = dayjs(parseInt(nexFileInfo.created_time)).format("YYYY-MM-DD HH:MM:ss")
       nexFileInfo.modified_time = dayjs(parseInt(nexFileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
-      let cur = curFileInfo.path.split('\\')
-      cur.pop()
-      let nex = nexFileInfo.path.split('\\')
-      nex.pop()
-      if (JSON.stringify(cur) == JSON.stringify(nex)) {
-        nexFileInfo.checked = true
-      }
+
       new FileInfo(curFileInfo, nexFileInfo).walk()
     }
   }
@@ -244,6 +244,7 @@ const deleteFiles = async () => {
   getDatas()
 }
 
+let dirPair: any[] = []
 class FileInfo {
   leftFile
   rightFile
@@ -269,18 +270,40 @@ class FileInfo {
     }
   }
   walk() {
-    let temp = leftTableData.value
     let pathBuf = this.leftFile.path.split('\\')
     let filename = pathBuf.pop()
-    let dir = pathBuf.join('\\')
-    //如果是文件夹
-    let length = temp.push({ id: dir, children: [] })
+    let leftdir = pathBuf.join('\\')
+
+    let rightpathBuf = this.rightFile.path.split('\\')
+    let rightfilename = rightpathBuf.pop()
+    let rightdir = rightpathBuf.join('\\')
+
     //如果文件夹不在默认展开，则添入
-    if (!defaultExpandedRowKeys.value.find((x: any) => x == dir)) {
-      defaultExpandedRowKeys.value.push(dir)
+    if (!defaultExpandedRowKeys.value.find((x: any) => x == leftdir)) {
+      defaultExpandedRowKeys.value.push(leftdir)
     }
-    temp = temp[length - 1].children
-    temp.push({
+    //如果文件夹不在默认展开，则添入
+    if (!defaultExpandedRowKeys.value.find((x: any) => x == rightdir)) {
+      defaultExpandedRowKeys.value.push(rightdir)
+    }
+
+    let pairdir = dirPair.find(x => x[leftdir] != undefined && x[rightdir] != undefined)
+
+    if (pairdir == undefined) {
+      //如果是文件夹
+      let length = leftTableData.value.push({ id: leftdir, children: [] })
+      //如果是文件夹
+      let rightlength = rightTableData.value.push({ id: rightdir, children: [] })
+      let obj: any = {}
+      obj[leftdir] = length - 1
+      obj[rightdir] = rightlength - 1
+      dirPair.push(obj)
+      pairdir = obj
+    }
+
+    let leftindex = pairdir[leftdir]
+    let rightindex = pairdir[rightdir]
+    leftTableData.value[leftindex].children.push({
       id: this.leftFile.id,
       len: this.leftFile.len,
       created_time: this.leftFile.created_time,
@@ -291,18 +314,7 @@ class FileInfo {
       filename
     })
 
-    temp = rightTableData.value
-    pathBuf = this.rightFile.path.split('\\')
-    filename = pathBuf.pop()
-    dir = pathBuf.join('\\')
-    //如果是文件夹
-    length = temp.push({ id: dir, children: [] })
-    //如果文件夹不在默认展开，则添入
-    if (!defaultExpandedRowKeys.value.find((x: any) => x == dir)) {
-      defaultExpandedRowKeys.value.push(dir)
-    }
-    temp = temp[length - 1].children
-    temp.push({
+    rightTableData.value[rightindex].children.push({
       id: this.rightFile.id,
       len: this.rightFile.len,
       created_time: this.rightFile.created_time,
@@ -310,7 +322,7 @@ class FileInfo {
       path: this.rightFile.path,
       sha1: this.rightFile.sha1,
       checked: this.rightFile.checked,
-      filename
+      filename: rightfilename
     })
   }
 }
