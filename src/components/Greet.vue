@@ -165,7 +165,7 @@ const getDatas = async () => {
     if (curFileInfo.sha1 == sha1) {
       continue
     }
-    if (repeatedCount[curFileInfo.sha1] > 1) {
+    if (repeatedCount[curFileInfo.sha1] % 2 == 0) {
       sha1 = curFileInfo.sha1
       const nexFileInfo = resDatas[i + 1]
       curFileInfo.created_time = dayjs(parseInt(curFileInfo.created_time)).format("YYYY-MM-DD HH:MM:ss")
