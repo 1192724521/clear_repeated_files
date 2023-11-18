@@ -100,7 +100,9 @@ WHERE
             .await;
             match selectvalue {
                 Ok(value) => {
-                    if value.modified_time != fileinfo.modified_time {
+                    if value.modified_time != fileinfo.modified_time
+                        || value.created_time != fileinfo.created_time
+                    {
                         sqlx::query(
                             r#"
 UPDATE fileInfo
