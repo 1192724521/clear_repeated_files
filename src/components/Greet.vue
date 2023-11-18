@@ -58,13 +58,12 @@ const selectDir = () => {
   })
 }
 const leftColumns: any = [
-  { key: "id", dataKey: "id", title: "序号", width: 200, align: "right" },
+  { key: "id", dataKey: "id", title: "序号", width: 100, align: "center" },
   { key: "sha1", dataKey: "sha1", title: "SHA1", width: 400, align: "center" },
   { key: "modified_time", dataKey: "modified_time", title: "修改日期", width: 200, align: "center" },
   { key: "created_time", dataKey: "created_time", title: "创建日期", width: 200, align: "center" },
-  { key: "filename", dataKey: "filename", title: "路径", width: 1000, align: "right" },
-  { key: "len", dataKey: "len", title: "文件大小", width: 100, align: "center" },
-
+  { key: "filename", dataKey: "filename", title: "路径", width: 400, align: "right" },
+  { key: "len", dataKey: "len", title: "文件大小", width: 100, align: "right" },
   {
     key: "select", width: 50, align: "center",
     cellRenderer: ({ rowData }: any) => {
@@ -103,12 +102,12 @@ const rightColumns: any = [
       return <ElCheckbox modelValue={allSelected} indeterminate={containsChecked && !allSelected} onChange={onChange} />
     }
   },
-  { key: "len", dataKey: "len", title: "文件大小", width: 100, align: "center" },
-  { key: "filename", dataKey: "filename", title: "路径", width: 1000 },
+  { key: "len", dataKey: "len", title: "文件大小", width: 100 },
+  { key: "filename", dataKey: "filename", title: "路径", width: 400 },
   { key: "created_time", dataKey: "created_time", title: "创建日期", width: 200, align: "center" },
   { key: "modified_time", dataKey: "modified_time", title: "修改日期", width: 200, align: "center" },
   { key: "sha1", dataKey: "sha1", title: "SHA1", width: 400, align: "center" },
-  { key: "id", dataKey: "id", title: "序号", width: 200 }
+  { key: "id", dataKey: "id", title: "序号", width: 100, align: "center" }
 ]
 const leftTableData: Ref<any[]> = ref([])
 const rightTableData: Ref<any[]> = ref([])
@@ -187,7 +186,7 @@ const leftRowClass = ({ rowData }: any) => {
   if (repeatedCount[rowData.sha1] > 1) {
     return 'leftIsRepeated'
   }
-  if (rowData.len == undefined) {
+  if (rowData.sha1 == undefined) {
     return 'isDir'
   }
 }
@@ -195,15 +194,15 @@ const rowClass = ({ rowData }: any) => {
   if (repeatedCount[rowData.sha1] > 1) {
     return 'isRepeated'
   }
-  if (rowData.len == undefined) {
+  if (rowData.sha1 == undefined) {
     return 'isDir'
   }
 }
 
-const leftcolSpanIndex = 4
+const leftcolSpanIndex = 5
 const LiftRow = ({ rowData, rowIndex, cells, columns }: any) => {
   if (rowData.sha1 == undefined) {
-    const colSpan = 5
+    const colSpan = 6
     let width = Number.parseInt(cells[leftcolSpanIndex].props.style.width)
     for (let i = 1; i < colSpan; i++) {
       width += Number.parseInt(cells[leftcolSpanIndex - i].props.style.width)
@@ -220,7 +219,7 @@ const LiftRow = ({ rowData, rowIndex, cells, columns }: any) => {
 const rightcolSpanIndex = 1
 const RightRow = ({ rowData, rowIndex, cells, columns }: any) => {
   if (rowData.sha1 == undefined) {
-    const colSpan = 5
+    const colSpan = 6
     let width = Number.parseInt(cells[rightcolSpanIndex].props.style.width)
     for (let i = 1; i < colSpan; i++) {
       width += Number.parseInt(cells[rightcolSpanIndex + i].props.style.width)
@@ -337,9 +336,9 @@ class FileInfo {
 
     if (pairdir == undefined) {
       //如果是文件夹
-      let length = leftTableData.value.push({ len: leftdir, children: [] })
+      let length = leftTableData.value.push({ id: leftdir, len: leftdir, children: [] })
       //如果是文件夹
-      let rightlength = rightTableData.value.push({ len: rightdir, children: [] })
+      let rightlength = rightTableData.value.push({ id: rightdir, len: rightdir, children: [] })
       let obj: any = {}
       obj[leftdir] = length - 1
       obj[rightdir] = rightlength - 1
@@ -379,7 +378,7 @@ class FileInfo {
   background-color: #f56c6c;
 }
 
-:global(.el-table-v2 .leftIsRepeated>div:nth-child(1)) {
+:global(.el-table-v2 .leftIsRepeated>div:nth-child(2)) {
   background-color: #f56c6c;
 }
 
