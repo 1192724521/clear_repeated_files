@@ -31,7 +31,7 @@
     </el-auto-resizer>
 
   </div>
-  <el-dialog v-model="dialogVisible" title="删除文件">
+  <el-dialog v-model="dialogVisible" title="删除文件" @keyup.enter="deleteFiles">
     <el-table :data="files">
       <el-table-column label="路径" prop="path"></el-table-column>
     </el-table>
@@ -270,11 +270,6 @@ const openDialog = () => {
   getCheckedFilePath(leftTableData.value)
   getCheckedFilePath(rightTableData.value)
   dialogVisible.value = true
-}
-
-const enterdeleteFiles = () => {
-  console.log("enter");
-  // deleteFiles()
 }
 
 const deleteFiles = async () => {
