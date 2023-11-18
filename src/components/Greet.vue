@@ -10,7 +10,7 @@
   <div style="height: calc(100% - 89px);;display: flex;">
     <el-auto-resizer style="width: 50%;">
       <template #default="{ height, width }">
-        <el-table-v2 :columns="leftColumns" :data="leftTableData" :height="height" :width="width" expand-column-key="id"
+        <el-table-v2 :columns="leftColumns" :data="leftTableData" :height="height" :width="width" expand-column-key="len"
           :row-class="leftRowClass" :default-expanded-row-keys="defaultExpandedRowKeys" v-loading.lock="tableLoading">
           <template #row="props">
             <LiftRow v-bind="props" />
@@ -18,11 +18,11 @@
         </el-table-v2>
       </template>
     </el-auto-resizer>
-
     <el-auto-resizer style="width: 50%">
       <template #default="{ height, width }">
-        <el-table-v2 :columns="rightColumns" :data="rightTableData" :height="height" :width="width" expand-column-key="id"
-          :row-class="rowClass" :default-expanded-row-keys="defaultExpandedRowKeys" v-loading.lock="tableLoading">
+        <el-table-v2 :columns="rightColumns" :data="rightTableData" :height="height" :width="width"
+          expand-column-key="len" :row-class="rowClass" :default-expanded-row-keys="defaultExpandedRowKeys"
+          v-loading.lock="tableLoading">
           <template #row="props">
             <RightRow v-bind="props" />
           </template>
@@ -58,11 +58,13 @@ const selectDir = () => {
   })
 }
 const leftColumns: any = [
+  { key: "id", dataKey: "id", title: "序号", width: 200, align: "right" },
   { key: "sha1", dataKey: "sha1", title: "SHA1", width: 400, align: "center" },
   { key: "modified_time", dataKey: "modified_time", title: "修改日期", width: 200, align: "center" },
-  { key: "len", dataKey: "len", title: "文件大小", width: 100, align: "center" },
+  { key: "created_time", dataKey: "created_time", title: "创建日期", width: 200, align: "center" },
   { key: "filename", dataKey: "filename", title: "路径", width: 1000, align: "right" },
-  { key: "id", dataKey: "id", title: "序号", width: 200, align: "right" },
+  { key: "len", dataKey: "len", title: "文件大小", width: 100, align: "center" },
+
   {
     key: "select", width: 50, align: "center",
     cellRenderer: ({ rowData }: any) => {
@@ -101,11 +103,12 @@ const rightColumns: any = [
       return <ElCheckbox modelValue={allSelected} indeterminate={containsChecked && !allSelected} onChange={onChange} />
     }
   },
-  { key: "id", dataKey: "id", title: "序号", width: 200 },
-  { key: "filename", dataKey: "filename", title: "路径", width: 1000 },
   { key: "len", dataKey: "len", title: "文件大小", width: 100, align: "center" },
+  { key: "filename", dataKey: "filename", title: "路径", width: 1000 },
+  { key: "created_time", dataKey: "created_time", title: "创建日期", width: 200, align: "center" },
   { key: "modified_time", dataKey: "modified_time", title: "修改日期", width: 200, align: "center" },
-  { key: "sha1", dataKey: "sha1", title: "SHA1", width: 400, align: "center" }
+  { key: "sha1", dataKey: "sha1", title: "SHA1", width: 400, align: "center" },
+  { key: "id", dataKey: "id", title: "序号", width: 200 }
 ]
 const leftTableData: Ref<any[]> = ref([])
 const rightTableData: Ref<any[]> = ref([])
@@ -334,9 +337,9 @@ class FileInfo {
 
     if (pairdir == undefined) {
       //如果是文件夹
-      let length = leftTableData.value.push({ id: leftdir, children: [] })
+      let length = leftTableData.value.push({ len: leftdir, children: [] })
       //如果是文件夹
-      let rightlength = rightTableData.value.push({ id: rightdir, children: [] })
+      let rightlength = rightTableData.value.push({ len: rightdir, children: [] })
       let obj: any = {}
       obj[leftdir] = length - 1
       obj[rightdir] = rightlength - 1
