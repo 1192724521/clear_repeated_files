@@ -141,7 +141,7 @@ const getAllFiles = async () => {
   rightTableData.value = []
   dirPair = []
   repeatedCount = {}
-  
+
   for (let i = 0; i < resDatas.length; i++) {
     const curFileInfo = resDatas[i];
     curFileInfo.created_time = dayjs(parseInt(curFileInfo.created_time)).format("YYYY-MM-DD HH:MM:ss")
@@ -265,7 +265,7 @@ const getDatas = async () => {
     if (nexFileInfo == undefined) {
       break
     }
-    if (repeatedCount[curFileInfo.sha1] % 2 == 0) {
+    if (repeatedCount[curFileInfo.sha1] % 2 == 0 && repeatedCount[curFileInfo.sha1] > 1) {
       curFileInfo.created_time = dayjs(parseInt(curFileInfo.created_time)).format("YYYY-MM-DD HH:MM:ss")
       curFileInfo.modified_time = dayjs(parseInt(curFileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
       nexFileInfo.created_time = dayjs(parseInt(nexFileInfo.created_time)).format("YYYY-MM-DD HH:MM:ss")
