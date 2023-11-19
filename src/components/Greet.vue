@@ -1,12 +1,12 @@
 <template>
   <div>
     <el-input v-model="selected" placeholder="请选择文件夹" @click="selectDir"></el-input>
-    <el-button type="primary" @click=getDatas v-loading.fullscreen.lock="searchLoading"
-      :element-loading-text="`已经获取 ${count} 个文件`">查询文件</el-button>
     <el-button type="primary" @click=getSingleDirDatas v-loading.fullscreen.lock="searchLoading"
-      :element-loading-text="`已经获取 ${count} 个文件`">查询单文件重复文件</el-button>
+      :element-loading-text="`已经获取 ${count} 个文件`">查询单文件内重复文件</el-button>
     <el-button type="primary" @click=caculateSha1>计算sha1</el-button>
     <el-button type="danger" @click="openDialog">删除文件</el-button>
+    <el-button type="primary" @click=getDatas v-loading.fullscreen.lock="searchLoading"
+      :element-loading-text="`已经获取 ${count} 个文件`">查询多文件夹内重复文件</el-button>
     <el-progress :percentage="progressPercent" text-inside :stroke-width="25" />
   </div>
   <div style="height: calc(100% - 89px);;display: flex;">
