@@ -3,6 +3,8 @@
     <el-input v-model="selected" placeholder="请选择文件夹" @click="selectDir"></el-input>
     <el-button type="primary" @click=getDatas v-loading.fullscreen.lock="searchLoading"
       :element-loading-text="`已经获取 ${count} 个文件`">查询文件</el-button>
+    <el-button type="primary" @click=getSingleDirDatas v-loading.fullscreen.lock="searchLoading"
+      :element-loading-text="`已经获取 ${count} 个文件`">查询单文件重复文件</el-button>
     <el-button type="primary" @click=caculateSha1>计算sha1</el-button>
     <el-button type="danger" @click="openDialog">删除文件</el-button>
     <el-progress :percentage="progressPercent" text-inside :stroke-width="25" />
@@ -115,6 +117,65 @@ let repeatedCount: any = {}
 
 let searchLoading = ref(false)
 let count = 0
+const getSingleDirDatas = async () => {
+  if (selected.value == "") {
+    return
+  }
+  searchLoading.value = true
+  count = 0
+  let loadingTextHtml = await Promise.resolve().then(() => {
+    return document.querySelector(".el-loading-text")
+  })
+  let timer = setInterval(() => {
+    invoke('get_walkfile_count').then((res: any) => {
+      count = res
+      loadingTextHtml!.innerHTML = `已经获取 ${count} 个文件`
+    })
+  }, 1000)
+
+  const res: string = await invoke("get_datas", { path: selected.value })
+  const resDatas = JSON.parse(res)
+
+  leftTableData.value = []
+  rightTableData.value = []
+  dirPair = []
+  repeatedCount = {}
+  for (let i = 0; i < resDatas.length; i++) {
+    const fileInfo = resDatas[i];
+    if (fileInfo.sha1 != null) {
+      if (repeatedCount[fileInfo.sha1] == undefined) {
+        repeatedCount[fileInfo.sha1] = 1
+      } else {
+        //已经有相同的sha1，该文件重复
+        let pre = resDatas[i - 1].path.split('\\')
+        pre.pop()
+        let cur = fileInfo.path.split('\\')
+        cur.pop()
+        if (JSON.stringify(cur) == JSON.stringify(pre)) {
+          fileInfo.checked = true
+        }
+        repeatedCount[fileInfo.sha1]++
+      }
+    }
+  }
+
+  for (let i = 0; i < resDatas.length; i++) {
+    const curFileInfo = resDatas[i];
+    if (curFileInfo.path.search(/U:\\阿里云盘\\聊天记录\\MsgBackup\\.*?-journal/) == 0) {
+      continue
+    }
+    if (repeatedCount[curFileInfo.sha1] > 1) {
+      curFileInfo.created_time = dayjs(parseInt(curFileInfo.created_time)).format("YYYY-MM-DD HH:MM:ss")
+      curFileInfo.modified_time = dayjs(parseInt(curFileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
+
+      curFileInfo.filename = curFileInfo.path.split('\\').pop()
+      leftTableData.value.push(curFileInfo)
+    }
+  }
+
+  clearInterval(timer)
+  searchLoading.value = false
+}
 const getDatas = async () => {
   if (selected.value == "") {
     return
@@ -161,7 +222,7 @@ const getDatas = async () => {
   let sha1
   for (let i = 0; i < resDatas.length; i++) {
     const curFileInfo = resDatas[i];
-    if (curFileInfo.path.search(/U:\\阿里云盘\\聊天记录\\MsgBackup/) == 0) {
+    if (curFileInfo.path.search(/U:\\阿里云盘\\聊天记录\\MsgBackup\\.*?-journal/) == 0) {
       continue
     }
     if (curFileInfo.sha1 == sha1) {
