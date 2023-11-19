@@ -219,24 +219,31 @@ const getDatas = async () => {
     }
   }
 
-  let sha1
   for (let i = 0; i < resDatas.length; i++) {
     const curFileInfo = resDatas[i];
+    const nexFileInfo = resDatas[i + 1]
     if (curFileInfo.path.search(/U:\\阿里云盘\\聊天记录\\MsgBackup\\.*?-journal/) == 0) {
       continue
     }
-    if (curFileInfo.sha1 == sha1) {
-      continue
+    if (nexFileInfo == undefined) {
+      break
     }
     if (repeatedCount[curFileInfo.sha1] % 2 == 0) {
-      sha1 = curFileInfo.sha1
-      const nexFileInfo = resDatas[i + 1]
       curFileInfo.created_time = dayjs(parseInt(curFileInfo.created_time)).format("YYYY-MM-DD HH:MM:ss")
       curFileInfo.modified_time = dayjs(parseInt(curFileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
       nexFileInfo.created_time = dayjs(parseInt(nexFileInfo.created_time)).format("YYYY-MM-DD HH:MM:ss")
       nexFileInfo.modified_time = dayjs(parseInt(nexFileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
-
       new FileInfo(curFileInfo, nexFileInfo).walk()
+      i++
+    } else {
+      if (curFileInfo.sha1 == nexFileInfo.sha1) {
+        curFileInfo.created_time = dayjs(parseInt(curFileInfo.created_time)).format("YYYY-MM-DD HH:MM:ss")
+        curFileInfo.modified_time = dayjs(parseInt(curFileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
+        nexFileInfo.created_time = dayjs(parseInt(nexFileInfo.created_time)).format("YYYY-MM-DD HH:MM:ss")
+        nexFileInfo.modified_time = dayjs(parseInt(nexFileInfo.modified_time)).format("YYYY-MM-DD HH:MM:ss")
+        new FileInfo(curFileInfo, nexFileInfo).walk()
+        i++
+      }
     }
   }
 
