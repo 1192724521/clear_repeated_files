@@ -360,12 +360,11 @@ const openDialog = () => {
   files.value = []
   const getCheckedFilePath = (tableData: any) => {
     for (let i = 0; i < tableData.length; i++) {
-      const fileInfo = tableData[i];
-      if (fileInfo.checked) {
-        files.value.push({ path: fileInfo.path })
-      } else {
-        if (fileInfo.children && fileInfo.children.length > 0) {
-          getCheckedFilePath(fileInfo.children)
+      const fileInfos = tableData[i];
+      for (let j = 0; j < fileInfos.children.length; j++) {
+        const fileInfo = fileInfos.children[j];
+        if (fileInfo.checked) {
+          files.value.push({ path: fileInfo.path })
         }
       }
     }
