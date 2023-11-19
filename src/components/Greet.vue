@@ -69,7 +69,12 @@ const leftColumns: any = [
   {
     key: "select", width: 50, align: "center",
     cellRenderer: ({ rowData }: any) => {
-      const onChange = (value: CheckboxValueType) => (rowData.checked = value)
+      const onChange = (value: CheckboxValueType) => {
+        rowData.checked = value
+        if (rowData.sha1 == undefined) {
+          rowData.children.map((children: any) => children.checked = value)
+        }
+      }
       return <ElCheckbox modelValue={rowData.checked} onChange={onChange} />
     },
     headerCellRenderer: () => {
@@ -89,7 +94,12 @@ const rightColumns: any = [
   {
     key: "select", width: 50, align: "center",
     cellRenderer: ({ rowData }: any) => {
-      const onChange = (value: CheckboxValueType) => (rowData.checked = value)
+      const onChange = (value: CheckboxValueType) => {
+        rowData.checked = value
+        if (rowData.sha1 == undefined) {
+          rowData.children.map((children: any) => children.checked = value)
+        }
+      }
       return <ElCheckbox modelValue={rowData.checked} onChange={onChange} />
     },
     headerCellRenderer: () => {
