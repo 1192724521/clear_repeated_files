@@ -7,16 +7,16 @@ CREATE TABLE
         sha1 TEXT
     );
 
-DELETE FROM fileInfo
+DELETE FROM fileInfos
 WHERE
     id = ?;
 
 SELECT
     *
 FROM
-    fileInfo
+    fileInfos
 WHERE
     path LIKE ?;
 
 
-ALTER TABLE `fileinfo` CHANGE `old_name` `new_name` new_type NOT NULL;
+ALTER TABLE `fileinfos` CHANGE `old_name` `new_name` new_type NOT NULL;

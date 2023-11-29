@@ -7,6 +7,7 @@ use std::{
     time::UNIX_EPOCH,
 };
 pub mod commands;
+mod sql;
 
 #[derive(Debug, FromRow, Serialize)]
 struct FileInfo {
@@ -27,7 +28,7 @@ static COUNT: Mutex<usize> = Mutex::new(0);
 pub static POOL: OnceLock<Pool<Sqlite>> = OnceLock::new();
 
 async fn select_all() -> Vec<FileInfo> {
-    sqlx::query_as("SELECT * from fileInfo")
+    sqlx::query_as("SELECT * from fileInfos")
         .fetch_all(POOL.get().unwrap())
         .await
         .unwrap()
@@ -42,7 +43,7 @@ async fn clear_not_exists_file_info() {
             Err(_) => {
                 sqlx::query(
                     r#"
-DELETE FROM fileInfo
+DELETE FROM fileInfos
 WHERE
     id = ?
                 "#,
@@ -91,7 +92,7 @@ async fn walk_dir(path: &str) {
 SELECT
     *
 FROM
-    fileInfo
+    fileInfos
 WHERE
     path = ?"#,
             )
@@ -105,7 +106,7 @@ WHERE
                     {
                         sqlx::query(
                             r#"
-UPDATE fileInfo
+UPDATE fileInfos
 SET
     len = ?,
     created_time = ?,
@@ -128,7 +129,7 @@ WHERE
                     sqlx::query(
                         r#"
 INSERT INTO
-    fileInfo
+    fileInfos
 VALUES
     (NULL, ?, ?, ?, ?, NULL)"#,
                     )
